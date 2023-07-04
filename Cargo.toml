@@ -1,0 +1,12 @@
+[package]
+name = "gtkwgpuarea"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gtk4 = { version = "0.8", features = ["v4_12"] }
+wgpu = "0.19"
+wgpu-types = "0.19"
+wgpu-hal = "0.19"
+epoxy = "0.1"
+libloading = "0.8"
