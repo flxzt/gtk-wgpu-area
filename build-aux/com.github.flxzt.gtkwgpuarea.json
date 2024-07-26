@@ -1,0 +1,46 @@
+{
+  "id": "com.github.flxzt.gtkwgpuarea",
+  "tags": [
+    "development"
+  ],
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "46",
+  "sdk": "org.gnome.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
+  "command": "gtkwgpuarea",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--device=dri",
+    "--filesystem=host",
+    "--env=RUST_BACKTRACE=full",
+    "--env=RUST_LOG=debug",
+    "--env=G_MESSAGES_DEBUG=all"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "build-args": [
+      "--share=network"
+    ],
+    "test-args": [
+      "--socket=x11",
+      "--share=network"
+    ]
+  },
+  "modules": [
+    {
+      "name": "gtkwgpuarea",
+      "buildsystem": "meson",
+      "run-tests": true,
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../"
+        }
+      ]
+    }
+  ]
+}
