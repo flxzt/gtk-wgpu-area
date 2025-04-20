@@ -8,8 +8,6 @@ pub(crate) use wgpuarea::WgpuArea;
 use gtk4::{glib, prelude::*};
 
 fn main() -> glib::ExitCode {
-    std::env::set_var("GDK_DEBUG", "gl-disable-gl");
-    std::env::set_var("GSK_RENDERER", "ngl");
     init_epoxy();
 
     let application =

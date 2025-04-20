@@ -135,7 +135,6 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
 
-            self.obj().set_allowed_apis(gdk::GLAPI::GLES);
             self.obj().set_has_stencil_buffer(true);
             self.obj().set_has_depth_buffer(true);
 
@@ -197,7 +196,8 @@ mod imp {
 
 glib::wrapper! {
     pub struct WgpuArea(ObjectSubclass<imp::WgpuArea>)
-        @extends gtk4::Widget, gtk4::GLArea;
+        @extends gtk4::Widget, gtk4::GLArea,
+        @implements gtk4::Accessible, gtk4::Buildable, gtk4::ConstraintTarget;
 }
 
 impl Default for WgpuArea {
