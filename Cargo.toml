@@ -5,8 +5,10 @@ version = "0.1.0"
 
 [dependencies]
 epoxy = "0.1"
-gtk4 = { version = "0.9.0", features = ["v4_14"] }
-libloading = "0.8.5"
-wgpu = "22.0.0"
-wgpu-hal = "22.0.0"
-wgpu-types = "22.0.0"
+# use the same version as wgpu-hal
+glow = "0.16.0"
+gtk4 = { version = "0.9.6", features = ["v4_14"] }
+libloading = "0.8.6"
+wgpu = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer" }
+wgpu-hal = { git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer", version = "25.0.0" }
+wgpu-types = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer" }

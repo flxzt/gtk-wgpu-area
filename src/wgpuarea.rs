@@ -1,21 +1,43 @@
+use glow;
 use gtk4::{gdk, glib, prelude::*, subclass::prelude::*, Align};
 use std::cell::RefCell;
+use std::num::NonZeroU32;
+use wgpu::TextureUses;
 use wgpu_hal as hal;
 use wgpu_types as wgt;
+use wgpu_hal::gles::TextureInner;
 
 struct Renderer {
     exposed: wgpu_hal::ExposedAdapter<wgpu_hal::api::Gles>,
+    fbo: glow::NativeFramebuffer,
 }
 
 impl Renderer {
     fn new() -> Self {
+        use glow::HasContext;
+
         static LOAD_FN: fn(&str) -> *const std::ffi::c_void =
             |s| epoxy::get_proc_addr(s) as *const _;
 
-        let exposed = unsafe { wgpu_hal::gles::Adapter::new_external(LOAD_FN) }
-            .expect("Initializing new wgpu_hal gles Adapter.");
+        let exposed = unsafe {
+            wgpu_hal::gles::Adapter::new_external(
+                LOAD_FN,
+                wgpu::GlBackendOptions::from_env_or_default(),
+            )
+        }
+        .expect("Initializing new wgpu_hal gles Adapter.");
 
-        Self { exposed }
+        // also need the nativeframebuffer here
+        let fbo = unsafe {
+            let ctx = glow::Context::from_loader_function(LOAD_FN);
+            let id = NonZeroU32::new(ctx.get_parameter_i32(glow::DRAW_FRAMEBUFFER_BINDING) as u32)
+                .expect("No GTK provided framebuffer binding");
+            ctx.bind_framebuffer(glow::FRAMEBUFFER, None);
+            // the view will be created by glow after binding to the correct framebuffer;
+            glow::NativeFramebuffer(id)
+        };
+
+        Self { exposed, fbo }
     }
 
     // From wgpu-hal/examples/raw-gles
@@ -32,7 +54,11 @@ impl Renderer {
         .unwrap();
 
         let format = wgt::TextureFormat::Rgba8UnormSrgb;
-        let texture = <hal::api::Gles as hal::Api>::Texture::default_framebuffer(format);
+        let mut texture = <hal::api::Gles as hal::Api>::Texture::default_framebuffer(format);
+        // then add the external gl inner texture
+        texture.inner = TextureInner::ExternalGlFrameBuffer { inner: self.fbo };
+
+
         let view = unsafe {
             od.device
                 .create_texture_view(
@@ -41,7 +67,7 @@ impl Renderer {
                         label: None,
                         format,
                         dimension: wgt::TextureViewDimension::D2,
-                        usage: hal::TextureUses::COLOR_TARGET,
+                        usage: TextureUses::COLOR_TARGET,
                         range: wgt::ImageSubresourceRange::default(),
                     },
                 )
@@ -69,7 +95,7 @@ impl Renderer {
             color_attachments: &[Some(hal::ColorAttachment {
                 target: hal::Attachment {
                     view: &view,
-                    usage: hal::TextureUses::COLOR_TARGET,
+                    usage: TextureUses::COLOR_TARGET,
                 },
                 resolve_target: None,
                 ops: hal::AttachmentOps::STORE,
