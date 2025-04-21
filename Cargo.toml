@@ -9,6 +9,14 @@ epoxy = "0.1"
 glow = "0.16.0"
 gtk4 = { version = "0.9.6", features = ["v4_14"] }
 libloading = "0.8.6"
-wgpu = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer" }
 wgpu-hal = { git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer", version = "25.0.0" }
 wgpu-types = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer" }
+
+# for mac os, we need the angle feature
+[target.'cfg(any(target_os = "macos"))'.dependencies]
+wgpu = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer", features = [
+    "angle",
+] }
+
+[target.'cfg(not(any(target_os = "macos")))'.dependencies]
+wgpu = { version = "25.0.0", git = "https://github.com/Doublonmousse/wgpu", branch = "external-gles-framebuffer" }
