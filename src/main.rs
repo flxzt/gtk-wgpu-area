@@ -31,6 +31,22 @@ fn build_ui(application: &gtk4::Application) {
 
 /// Load GL pointers from epoxy (GL context management library used by GTK).
 pub fn init_epoxy() {
+    // check if ANGLE is present on macos
+    #[cfg(target_os = "macos")]
+    {
+        let is_angle_loaded = unsafe {
+            [
+                libloading::os::unix::Library::new("libEGL.dylib"),
+                libloading::os::unix::Library::new("libGLESv2.dylib"),
+            ]
+        }
+        .iter()
+        .fold(true, |acc, new| acc && new.is_ok());
+        if !is_angle_loaded {
+            panic!("The ANGLE library must be loaded for this example to work");
+        }
+    }
+
     #[cfg(target_os = "macos")]
     let library = unsafe { libloading::os::unix::Library::new("libepoxy.0.dylib") }.unwrap();
     #[cfg(all(unix, not(target_os = "macos")))]
