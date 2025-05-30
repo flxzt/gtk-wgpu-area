@@ -56,7 +56,7 @@ impl Renderer {
         let format = wgt::TextureFormat::Rgba8UnormSrgb;
         let mut texture = <hal::api::Gles as hal::Api>::Texture::default_framebuffer(format);
         // then add the external gl inner texture
-        texture.inner = TextureInner::ExternalGlFrameBuffer { inner: self.fbo };
+        texture.inner = TextureInner::ExternalNativeFramebuffer { inner: self.fbo };
 
 
         let view = unsafe {
@@ -100,6 +100,7 @@ impl Renderer {
                 resolve_target: None,
                 ops: hal::AttachmentOps::STORE,
                 clear_value: wgt::Color::BLUE,
+                depth_slice: None,
             })],
             depth_stencil_attachment: None,
             multiview: None,
@@ -108,7 +109,9 @@ impl Renderer {
         };
         unsafe {
             encoder.begin_encoding(None).unwrap();
-            encoder.begin_render_pass(&rp_desc);
+            if let Err(e) =  encoder.begin_render_pass(&rp_desc) {
+                println!("failed to begin render pass, errored with {:?}",e);
+            }
             encoder.end_render_pass();
             let cmd_buf = encoder.end_encoding().unwrap();
             od.queue.submit(&[&cmd_buf], &[], (&mut fence, 0)).unwrap();
