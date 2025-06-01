@@ -8,7 +8,7 @@ epoxy = "0.1"
 # use the same version as wgpu-hal
 glow = "0.16.0"
 gtk4 = { version = "0.9.6", features = ["v4_14"] }
-libloading = "0.8.6"
+libloading = "0.8.8"
 
 wgpu-hal = { git = "https://github.com/gfx-rs/wgpu", version = "25.0.0" }
 wgpu-types = { version = "25.0.0", git = "https://github.com/gfx-rs/wgpu" }

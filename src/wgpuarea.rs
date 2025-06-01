@@ -1,11 +1,10 @@
-use glow;
 use gtk4::{gdk, glib, prelude::*, subclass::prelude::*, Align};
 use std::cell::RefCell;
 use std::num::NonZeroU32;
 use wgpu::TextureUses;
 use wgpu_hal as hal;
-use wgpu_types as wgt;
 use wgpu_hal::gles::TextureInner;
+use wgpu_types as wgt;
 
 struct Renderer {
     exposed: wgpu_hal::ExposedAdapter<wgpu_hal::api::Gles>,
@@ -25,13 +24,13 @@ impl Renderer {
                 wgpu::GlBackendOptions::from_env_or_default(),
             )
         }
-        .expect("Initializing new wgpu_hal gles Adapter.");
+        .unwrap();
 
-        // also need the nativeframebuffer here
+        // also need the native framebuffer here
         let fbo = unsafe {
             let ctx = glow::Context::from_loader_function(LOAD_FN);
             let id = NonZeroU32::new(ctx.get_parameter_i32(glow::DRAW_FRAMEBUFFER_BINDING) as u32)
-                .expect("No GTK provided framebuffer binding");
+                .unwrap();
             ctx.bind_framebuffer(glow::FRAMEBUFFER, None);
             // the view will be created by glow after binding to the correct framebuffer;
             glow::NativeFramebuffer(id)
@@ -58,7 +57,6 @@ impl Renderer {
         // then add the external gl inner texture
         texture.inner = TextureInner::ExternalNativeFramebuffer { inner: self.fbo };
 
-
         let view = unsafe {
             od.device
                 .create_texture_view(
@@ -74,7 +72,6 @@ impl Renderer {
                 .unwrap()
         };
 
-        println!("Filling the screen");
         let mut encoder = unsafe {
             od.device
                 .create_command_encoder(&hal::CommandEncoderDescriptor {
@@ -109,9 +106,7 @@ impl Renderer {
         };
         unsafe {
             encoder.begin_encoding(None).unwrap();
-            if let Err(e) =  encoder.begin_render_pass(&rp_desc) {
-                println!("failed to begin render pass, errored with {:?}",e);
-            }
+            encoder.begin_render_pass(&rp_desc).unwrap();
             encoder.end_render_pass();
             let cmd_buf = encoder.end_encoding().unwrap();
             od.queue.submit(&[&cmd_buf], &[], (&mut fence, 0)).unwrap();
@@ -137,10 +132,8 @@ mod imp {
     impl ObjectImpl for WgpuArea {
         fn constructed(&self) {
             self.parent_constructed();
-
             self.obj().set_has_stencil_buffer(true);
             self.obj().set_has_depth_buffer(true);
-
             self.obj().set_halign(Align::Fill);
             self.obj().set_valign(Align::Fill);
             self.obj().set_hexpand(true);
@@ -151,10 +144,8 @@ mod imp {
     impl WidgetImpl for WgpuArea {
         fn realize(&self) {
             self.parent_realize();
-
-            if let Some(e) = self.obj().error() {
-                eprintln!("error in WgpuArea realize, Err: {e:?}");
-                return;
+            if let Some(err) = self.obj().error() {
+                eprintln!("error in WgpuArea realize, Err: {err:?}");
             }
         }
 
@@ -207,4 +198,41 @@ impl Default for WgpuArea {
     fn default() -> Self {
         glib::Object::new()
     }
+}
+
+/// Load GL pointers from epoxy (GL context management library used by GTK).
+pub fn init_epoxy() {
+    // check if ANGLE is present on macos
+    #[cfg(target_os = "macos")]
+    {
+        let is_angle_loaded = unsafe {
+            [
+                libloading::os::unix::Library::new("libEGL.dylib"),
+                libloading::os::unix::Library::new("libGLESv2.dylib"),
+            ]
+        }
+        .iter()
+        .fold(true, |acc, new| acc && new.is_ok());
+        if !is_angle_loaded {
+            panic!("The ANGLE library must be loaded for this example to work");
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    let library = unsafe { libloading::os::unix::Library::new("libepoxy.0.dylib") }.unwrap();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let library = unsafe { libloading::os::unix::Library::new("libepoxy.so.0") }.unwrap();
+    #[cfg(windows)]
+    let library = libloading::os::windows::Library::open_already_loaded("libepoxy-0.dll")
+        .or_else(|_| libloading::os::windows::Library::open_already_loaded("epoxy-0.dll"))
+        .unwrap();
+
+    epoxy::load_with(|name| {
+        unsafe { library.get::<_>(name.as_bytes()) }
+            .map(|symbol| *symbol)
+            .unwrap_or_else(|err| {
+                eprintln!("failed to init epoxy, Err: {err:?}");
+                std::ptr::null()
+            })
+    });
 }
