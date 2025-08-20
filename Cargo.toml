@@ -7,18 +7,18 @@ version = "0.1.0"
 epoxy = "0.1"
 # use the same version as wgpu-hal
 glow = "0.16.0"
-gtk4 = { version = "0.9.6", features = ["v4_14"] }
+gtk4 = { version = "0.9.7", features = ["v4_14"] }
 libloading = "0.8.8"
 
-wgpu-hal = { git = "https://github.com/gfx-rs/wgpu", version = "25.0.0" }
-wgpu-types = { version = "25.0.0", git = "https://github.com/gfx-rs/wgpu" }
+wgpu-hal = { version = "26.0" }
+wgpu-types = { version = "26.0" }
 
 # for mac os, we need the angle feature
 [target.'cfg(any(target_os = "macos"))'.dependencies]
-wgpu = { version = "25.0.0", git = "https://github.com/gfx-rs/wgpu", features = [
+wgpu = { version = "26.0", features = [
     "angle",
 ] }
 
 [target.'cfg(not(any(target_os = "macos")))'.dependencies]
-wgpu = { version = "25.0.0", git = "https://github.com/gfx-rs/wgpu" }
+wgpu = { version = "26.0" }
 
